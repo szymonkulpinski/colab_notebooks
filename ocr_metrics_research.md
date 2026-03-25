@@ -12,7 +12,7 @@ For each of the 8 datasets we use a task-appropriate combination:
 |---------|---------|-----------|-------|
 | CAPTCHA | Exact Match | CER | Short alphanumeric, high precision needed |
 | LaTeX equations | NED | CER | CDM is the emerging standard but requires LaTeX rendering; NED is practical |
-| Receipt (total field) | Exact Match | NED | Numeric field; comparing total value only |
+| Receipt (3 fields) | Field-level Exact Match | — | merchant_name, tax, total; mean accuracy across fields |
 | Date stamps | Exact Match | CER | Structured YYYY-MM-DD format |
 | Jersey numbers | Exact Match | CER | Short numeric string |
 | Container serials | Exact Match | CER | Alphanumeric serial codes |
@@ -106,15 +106,18 @@ We deliberately avoid:
 
 ## Notes on Receipt Parsing
 
-The receipt dataset uses a structured JSON extraction prompt. For simplicity, we extract
-and compare only the **total** field (a single numeric value). This tests whether the model
-can:
-1. Locate the total amount in the receipt image
-2. Read it correctly (potentially through noise, stamps, handwriting)
+The receipt dataset uses a structured JSON extraction prompt. We compare **three key fields**:
+`merchant_name`, `tax`, and `total`. This is a deliberate middle ground:
 
-This is a deliberate simplification. A more complete evaluation would compare all JSON
-fields (merchant name, items, tax, etc.) using field-level F1. The limitation is noted
-in the notebook.
+- **Too easy**: comparing only the total (single numeric value, easy to guess)
+- **Too noisy**: comparing every line item (OCR errors compound across many items)
+- **Our choice**: 3 representative fields covering text (merchant name) and numerics (tax, total)
+
+The reported "Exact Match" for receipts is the **mean field accuracy** across the 3 fields.
+Numeric fields (tax, total) are normalised by stripping currency symbols and leading zeros
+before comparison. Models that fail to produce valid JSON score 0 on all fields.
+
+A more complete evaluation would use field-level F1 across all JSON keys, similar to SROIE/CORD.
 
 ---
 
